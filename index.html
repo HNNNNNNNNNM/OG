@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>노래 가사</title>
+<title>ORIGINAL SONGS LYLICS</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
   :root{
@@ -724,6 +724,7 @@
     els.playerSub.textContent = LANG_LABELS[currentLang];
     els.miniTitle.textContent = song.title;
     els.miniCover.src = song.cover_url || '';
+    updateMediaSession(song);
 
     renderLangRow(song);
     buildLyricsView(song);
@@ -735,6 +736,30 @@
   }
 
   function onPlayError(){ showToast('이 브라우저에서는 이 언어의 오디오를 재생할 수 없어요.'); }
+
+  function updateMediaSession(song){
+    if (!('mediaSession' in navigator)) return;
+    const artwork = song.cover_url ? [
+      { src: song.cover_url, sizes: '512x512', type: 'image/jpeg' }
+    ] : [];
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: song.title,
+      artist: LANG_LABELS[currentLang],
+      album: categoryLabel(song.category),
+      artwork: artwork
+    });
+  }
+
+  function setupMediaSessionHandlers(){
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.setActionHandler('play', () => els.audio.play().catch(onPlayError));
+    navigator.mediaSession.setActionHandler('pause', () => els.audio.pause());
+    navigator.mediaSession.setActionHandler('previoustrack', () => prev());
+    navigator.mediaSession.setActionHandler('nexttrack', () => next(false));
+    navigator.mediaSession.setActionHandler('seekto', (details) => {
+      if (details.seekTime !== undefined) els.audio.currentTime = details.seekTime;
+    });
+  }
 
   function togglePlay(){
     if (!els.audio.src) return;
@@ -861,6 +886,7 @@
     els.playerSub.textContent = LANG_LABELS[currentLang];
     renderLangRow(song);
     buildLyricsView(song);
+    updateMediaSession(song);
 
     const onReady = () => {
       els.audio.currentTime = savedTime;
@@ -989,6 +1015,7 @@
       els.loading.classList.add('hidden');
       renderLibraryScreen();
       showScreen('library');
+      setupMediaSessionHandlers();
     })
     .catch(err => {
       els.loading.textContent = '곡 목록을 불러오지 못했어요. songs.json 파일 위치를 확인해 주세요.';
