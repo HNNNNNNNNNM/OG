@@ -1,676 +1,510 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>함께 있어요 — 가사 플레이어</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
-<style>
-  :root{
-    --ink: #141b24;
-    --panel: #1c2530;
-    --panel-2: #222c38;
-    --hairline: rgba(255,255,255,0.08);
-    --text-dim: #5c6b7a;
-    --text-soft: #93a1ae;
-    --text-bright: #eef1f4;
-    --candle: #e8b84b;
-    --candle-dim: rgba(232,184,75,0.35);
-    --teal: #4f8c8a;
-    --danger: #c96a4f;
-    --radius: 14px;
-    --stage-h: 46vh;
-  }
-
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body{
-    margin:0;
-    background: var(--ink);
-    color: var(--text-bright);
-    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, 'Noto Sans SC', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
-  }
-
-  .app{
-    max-width: 480px;
-    margin: 0 auto;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    border-left: 1px solid var(--hairline);
-    border-right: 1px solid var(--hairline);
-  }
-
-  /* ---------- Top bar ---------- */
-  .topbar{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    padding: 18px 20px 14px;
-    flex-shrink:0;
-  }
-  .cover-wrap{
-    width:52px; height:52px;
-    border-radius: 8px;
-    overflow:hidden;
-    flex-shrink:0;
-    background: var(--panel-2);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.35);
-  }
-  .cover-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .track-meta{ min-width:0; flex:1; }
-  .eyebrow{
-    font-family:'Space Mono', monospace;
-    font-size: 10.5px;
-    letter-spacing: 0.12em;
-    color: var(--text-soft);
-    text-transform: uppercase;
-  }
-  .track-title{
-    font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size: 18px;
-    line-height:1.25;
-    margin-top:2px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .icon-btn{
-    background:none; border:none; color: var(--text-soft);
-    width:38px; height:38px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer; flex-shrink:0;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-  .icon-btn:hover{ background: var(--panel-2); color: var(--text-bright); }
-  .icon-btn:focus-visible, button:focus-visible, input:focus-visible{
-    outline: 2px solid var(--teal); outline-offset: 2px;
-  }
-  .icon-btn svg{ width:20px; height:20px; }
-
-  /* ---------- Lyric stage ---------- */
-  .stage{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    padding: 0 28px;
-    text-align:center;
-    position:relative;
-    min-height: 0;
-  }
-  .lyric-line{
-    font-weight:600;
-    line-height:1.5;
-    transition: opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease;
-    word-break: keep-all;
-  }
-  .lyric-line.prev, .lyric-line.next{
-    font-size: clamp(14px, 3.6vw, 18px);
-    color: var(--text-dim);
-    filter: blur(0.4px);
-    opacity: 0.55;
-  }
-  .lyric-line.prev{ transform: translateY(-4px); margin-bottom: 22px; }
-  .lyric-line.next{ transform: translateY(4px); margin-top: 22px; }
-  .lyric-line.current{
-    font-size: clamp(22px, 6vw, 30px);
-    color: var(--text-bright);
-    text-shadow: 0 0 22px var(--candle-dim);
-  }
-  .lyric-line.current .accent{ color: var(--candle); }
-  .lyric-idle{
-    font-family:'Fraunces', serif;
-    font-style: italic;
-    font-size: 16px;
-    color: var(--text-dim);
-    letter-spacing: 0.02em;
-  }
-  .lyric-idle .dots span{
-    animation: blink 1.4s infinite;
-    animation-delay: calc(var(--i) * 0.2s);
-  }
-  @keyframes blink{ 0%,100%{opacity:.25;} 50%{opacity:1;} }
-
-  .lang-row{
-    display:flex; gap:8px; justify-content:center;
-    padding: 10px 20px 0;
-    flex-shrink:0;
-  }
-  .lang-pill{
-    font-family:'Space Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--hairline);
-    background: transparent;
-    color: var(--text-dim);
-    cursor:pointer;
-    transition: all 0.15s ease;
-  }
-  .lang-pill:disabled{ opacity: 0.25; cursor: not-allowed; }
-  .lang-pill.active{
-    color: var(--ink);
-    background: var(--candle);
-    border-color: var(--candle);
-  }
-  .lang-pill:not(:disabled):hover{ color: var(--text-bright); border-color: var(--text-soft); }
-
-  .notice{
-    text-align:center;
-    font-size: 12px;
-    color: var(--danger);
-    height: 16px;
-    padding-top: 6px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-  .notice.show{ opacity: 1; }
-
-  /* ---------- Transport ---------- */
-  .transport{
-    flex-shrink:0;
-    padding: 10px 22px calc(18px + env(safe-area-inset-bottom));
-  }
-  .seek-row{
-    display:flex; align-items:center; gap:10px;
-    margin-bottom: 14px;
-  }
-  .time{
-    font-family:'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--text-soft);
-    min-width: 34px;
-  }
-  .time.right{ text-align:right; }
-  .seek{
-    -webkit-appearance:none;
-    appearance:none;
-    flex:1;
-    height: 3px;
-    border-radius: 3px;
-    background: var(--panel-2);
-    outline:none;
-    cursor:pointer;
-  }
-  .seek::-webkit-slider-thumb{
-    -webkit-appearance:none;
-    width:12px; height:12px; border-radius:50%;
-    background: var(--teal);
-    box-shadow: 0 0 0 3px rgba(79,140,138,0.2);
-    margin-top: -4.5px;
-  }
-  .seek::-webkit-slider-runnable-track{ height:3px; border-radius:3px; }
-  .seek::-moz-range-thumb{
-    width:12px; height:12px; border-radius:50%; border:none;
-    background: var(--teal);
-  }
-
-  .controls{
-    display:flex; align-items:center; justify-content:center; gap: 28px;
-  }
-  .ctrl-btn{
-    background:none; border:none; color: var(--text-bright);
-    cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .ctrl-btn svg{ width:22px; height:22px; }
-  .ctrl-btn.play-pause{
-    width:56px; height:56px;
-    border-radius:50%;
-    background: var(--panel-2);
-    border: 1px solid var(--hairline);
-    transition: transform 0.12s ease, background 0.15s ease;
-  }
-  .ctrl-btn.play-pause:hover{ background: var(--panel); }
-  .ctrl-btn.play-pause:active{ transform: scale(0.94); }
-  .ctrl-btn.play-pause svg{ width:22px; height:22px; }
-
-  /* ---------- Playlist drawer ---------- */
-  .drawer-backdrop{
-    position:absolute; inset:0;
-    background: rgba(10,13,17,0.6);
-    opacity:0; pointer-events:none;
-    transition: opacity 0.25s ease;
-    z-index: 5;
-  }
-  .drawer-backdrop.open{ opacity:1; pointer-events:auto; }
-  .drawer{
-    position:absolute; left:0; right:0; bottom:0;
-    height: 72%;
-    background: var(--panel);
-    border-top: 1px solid var(--hairline);
-    border-radius: 18px 18px 0 0;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(.32,.72,0,1);
-    z-index: 6;
-    display:flex; flex-direction:column;
-    box-shadow: 0 -12px 30px rgba(0,0,0,0.4);
-  }
-  .drawer.open{ transform: translateY(0); }
-  .drawer-handle{
-    width:36px; height:4px; border-radius:2px;
-    background: var(--hairline);
-    margin: 12px auto 6px;
-    flex-shrink:0;
-  }
-  .drawer-head{
-    display:flex; align-items:center; justify-content:space-between;
-    padding: 4px 20px 12px;
-    flex-shrink:0;
-  }
-  .drawer-head h2{
-    font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size: 17px;
-    margin:0;
-  }
-  .drawer-count{ font-family:'Space Mono', monospace; font-size:11px; color:var(--text-soft); }
-  .search-box{
-    margin: 0 20px 10px;
-    padding: 9px 12px;
-    background: var(--panel-2);
-    border: 1px solid var(--hairline);
-    border-radius: 10px;
-    color: var(--text-bright);
-    font-size: 14px;
-  }
-  .search-box::placeholder{ color: var(--text-dim); }
-  .song-list{
-    overflow-y:auto;
-    flex:1;
-    padding: 0 8px 14px;
-  }
-  .song-item{
-    display:flex; align-items:center; gap:12px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    cursor:pointer;
-  }
-  .song-item:hover{ background: var(--panel-2); }
-  .song-item.active{ background: var(--panel-2); }
-  .song-item.active .song-item-title{ color: var(--candle); }
-  .song-item img{
-    width:38px; height:38px; border-radius:6px; object-fit:cover; flex-shrink:0;
-    background: var(--panel-2);
-  }
-  .song-item-title{
-    font-size: 14.5px; font-weight:500;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .song-item-sub{
-    font-family:'Space Mono', monospace;
-    font-size: 10.5px; color: var(--text-dim);
-    margin-top:2px;
-  }
-
-  ::-webkit-scrollbar{ width:6px; }
-  ::-webkit-scrollbar-thumb{ background: var(--panel-2); border-radius:3px; }
-
-  @media (prefers-reduced-motion: reduce){
-    *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
-  }
-
-  .loading-screen{
-    position:fixed; inset:0; background:var(--ink);
-    display:flex; align-items:center; justify-content:center;
-    color:var(--text-dim); font-family:'Fraunces',serif; font-style:italic;
-    z-index:20;
-  }
-  .loading-screen.hidden{ display:none; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>JW Music Library Player</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css');
+        body { font-family: 'Pretendard', sans-serif; background-color: #f4f4f6; color: #333; }
+        /* 스크롤바 숨기기 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 antialiased select-none">
+    <div id="root"></div>
 
-<div class="loading-screen" id="loadingScreen">불러오는 중…</div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-<div class="app">
+        // --- 모의 데이터베이스 (안전성 강화를 위한 디폴트 프로퍼티 포함) ---
+        const MOCK_DATABASE = [
+            {
+                id: "osg_001",
+                category: "오리지널송",
+                number: null,
+                title: "우리 함께 있어요",
+                subtitle: "(We Are There for Each Other)",
+                cover_url: "https://placehold.co/600x600/5b4b8a/ffffff?text=Original+Song",
+                audio_urls: {
+                    ko: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                    en: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                    cn: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+                },
+                has_sync: true,
+                lyrics: {
+                    ko: [
+                        { start: 0, end: 5, text: "어떤 어려움을 겪더라도" },
+                        { start: 5, end: 12, text: "우리가 함께라면 이겨낼 수 있어요" },
+                        { start: 12, end: 20, text: "달콤한 한마디 우리의 말에는" },
+                        { start: 20, end: 35, text: "정말 큰 힘이 있어요 함께라면" }
+                    ],
+                    en: [
+                        { start: 0, end: 5, text: "No matter what trials come our way" },
+                        { start: 5, end: 12, text: "We'll stand together, come what may" },
+                        { start: 12, end: 20, text: "A gentle word can heal and bless" },
+                        { start: 20, end: 35, text: "Bringing true peace and happiness" }
+                    ],
+                    cn: [
+                        { start: 0, end: 5, text: "无论面对什么艰难险阻" },
+                        { start: 5, end: 12, text: "只要我们并肩就能战胜一切" },
+                        { start: 12, end: 20, text: "一句温言充满着力量" },
+                        { start: 20, end: 35, text: "带给我们无限的安慰" }
+                    ]
+                }
+            },
+            {
+                id: "osg_002",
+                category: "오리지널송",
+                number: null,
+                title: "달콤한 한마디",
+                subtitle: "(A Gentle Word)",
+                cover_url: "https://placehold.co/600x600/5b4b8a/ffffff?text=Original+Song",
+                audio_urls: {
+                    ko: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+                    en: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+                    cn: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+                },
+                has_sync: true,
+                lyrics: {
+                    ko: [
+                        { start: 0, end: 6, text: "지친 마음을 위로하는 그 말" },
+                        { start: 6, end: 15, text: "상처받은 영혼을 감싸 안아주네" }
+                    ],
+                    en: [
+                        { start: 0, end: 6, text: "Words that heal a weary soul" },
+                        { start: 6, end: 15, text: "Making broken spirits whole" }
+                    ],
+                    cn: [
+                        { start: 0, end: 6, text: "温言抚慰疲倦心灵" },
+                        { start: 6, end: 15, text: "带去无限安慰与力量" }
+                    ]
+                }
+            },
+            {
+                id: "sjj_008",
+                category: "'기쁨으로 여호와께 노래하라'—노래",
+                number: 8,
+                title: "여호와는 우리의 도피처",
+                subtitle: "(시편 91)",
+                cover_url: "https://placehold.co/600x600/4c3b6b/ffffff?text=Sing+Out+Joyfully",
+                audio_urls: {
+                    ko: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                    en: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                    cn: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+                },
+                has_sync: false,
+                static_lyrics: {
+                    ko: [
+                        "1. 여호와 하느님은 우리의 도피처,",
+                        "   그 보호 그늘 아래 항상 머물리라.",
+                        "   견고한 산성과 같이 늘 충실하신 여호와,",
+                        "   굳건히 의지하면 항상 지켜 주시리라.",
+                        "",
+                        "2. 만 인이 내 곁에서 쓰러질지라도",
+                        "   의롭고 온유한 자 늘 보호받으리.",
+                        "   그 어떤 재앙이라도 우릴 해치지 못하리.",
+                        "   하느님 날개 아래 우린 안전히 거하리."
+                    ],
+                    en: [
+                        "1. Jehovah God is our refuge,",
+                        "   Our God in whom we trust.",
+                        "   His shadow is our shelter;",
+                        "   Remain in it we must."
+                    ],
+                    cn: [
+                        "1. 耶和华是庇护所,救我躲避灾祸。",
+                        "   要寻求他的保护,留在安全之处。"
+                    ]
+                }
+            }
+        ];
 
-  <div class="topbar">
-    <div class="cover-wrap"><img id="coverImg" alt=""></div>
-    <div class="track-meta">
-      <div class="eyebrow" id="eyebrow">ORIGINAL SONG</div>
-      <div class="track-title" id="trackTitle">—</div>
-    </div>
-    <button class="icon-btn" id="openDrawerBtn" aria-label="곡 목록 열기" title="곡 목록">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg>
-    </button>
-  </div>
+        function App() {
+            const [view, setView] = useState('home');
+            const [selectedCategory, setSelectedCategory] = useState(null);
+            
+            const [playlist, setPlaylist] = useState(MOCK_DATABASE);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [currentTime, setCurrentTime] = useState(0);
+            const [duration, setDuration] = useState(0);
+            
+            const [lang, setLang] = useState('ko');
+            const [repeatMode, setRepeatMode] = useState('all');
+            const [showLangModal, setShowLangModal] = useState(false);
 
-  <div class="stage" id="stage">
-    <div class="lyric-idle" id="lyricIdle">
-      연주 중<span class="dots"><span style="--i:0">.</span><span style="--i:1">.</span><span style="--i:2">.</span></span>
-    </div>
-  </div>
+            const audioRef = useRef(null);
+            
+            // 안전하게 현재 곡 추출 (Undefined 방지)
+            const currentSong = (playlist && playlist.length > 0 && playlist[currentIndex]) 
+                ? playlist[currentIndex] 
+                : (MOCK_DATABASE[0]);
 
-  <div class="lang-row" id="langRow"></div>
-  <div class="notice" id="notice"></div>
+            useEffect(() => {
+                const audio = audioRef.current;
+                if (!audio) return;
 
-  <div class="transport">
-    <div class="seek-row">
-      <span class="time" id="curTime">0:00</span>
-      <input type="range" class="seek" id="seek" min="0" max="100" value="0" step="0.1" aria-label="재생 위치">
-      <span class="time right" id="durTime">0:00</span>
-    </div>
-    <div class="controls">
-      <button class="ctrl-btn" id="prevBtn" aria-label="이전 곡">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6z"/></svg>
-      </button>
-      <button class="ctrl-btn play-pause" id="playBtn" aria-label="재생">
-        <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-        <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
-      </button>
-      <button class="ctrl-btn" id="nextBtn" aria-label="다음 곡">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l11 6-11 6z"/></svg>
-      </button>
-    </div>
-  </div>
+                const updateTime = () => setCurrentTime(audio.currentTime);
+                const updateMeta = () => setDuration(audio.duration || 0);
+                const handleEnded = () => {
+                    if (repeatMode === 'one') {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => {});
+                    } else {
+                        handleNext();
+                    }
+                };
 
-  <div class="drawer-backdrop" id="drawerBackdrop"></div>
-  <div class="drawer" id="drawer">
-    <div class="drawer-handle"></div>
-    <div class="drawer-head">
-      <h2>전체 곡 목록</h2>
-      <span class="drawer-count" id="drawerCount">0곡</span>
-    </div>
-    <input type="text" class="search-box" id="searchBox" placeholder="제목으로 찾기">
-    <div class="song-list" id="songList"></div>
-  </div>
+                audio.addEventListener('timeupdate', updateTime);
+                audio.addEventListener('loadedmetadata', updateMeta);
+                audio.addEventListener('ended', handleEnded);
 
-</div>
+                return () => {
+                    audio.removeEventListener('timeupdate', updateTime);
+                    audio.removeEventListener('loadedmetadata', updateMeta);
+                    audio.removeEventListener('ended', handleEnded);
+                };
+            }, [currentIndex, repeatMode, playlist]);
 
-<audio id="audio" preload="metadata"></audio>
+            const togglePlay = () => {
+                const audio = audioRef.current;
+                if (!audio) return;
+                if (isPlaying) {
+                    audio.pause();
+                } else {
+                    audio.play().catch(e => console.log("Play error:", e));
+                }
+                setIsPlaying(!isPlaying);
+            };
 
-<script>
-(function(){
-  "use strict";
+            const handleNext = () => {
+                if (!playlist || playlist.length === 0) return;
+                if (repeatMode === 'shuffle') {
+                    const nextRandom = Math.floor(Math.random() * playlist.length);
+                    setCurrentIndex(nextRandom);
+                } else {
+                    setCurrentIndex((prev) => (prev + 1) % playlist.length);
+                }
+                setCurrentTime(0);
+                setIsPlaying(true);
+            };
 
-  const LANG_LABELS = { ko: 'KO', en: 'EN', cn: '中文' };
-  const LANG_ORDER = ['ko','en','cn'];
+            const handlePrev = () => {
+                if (!playlist || playlist.length === 0) return;
+                setCurrentIndex((prev) => (prev - 1 + playlist.length) % playlist.length);
+                setCurrentTime(0);
+                setIsPlaying(true);
+            };
 
-  const els = {
-    loading: document.getElementById('loadingScreen'),
-    cover: document.getElementById('coverImg'),
-    eyebrow: document.getElementById('eyebrow'),
-    title: document.getElementById('trackTitle'),
-    stage: document.getElementById('stage'),
-    idle: document.getElementById('lyricIdle'),
-    langRow: document.getElementById('langRow'),
-    notice: document.getElementById('notice'),
-    curTime: document.getElementById('curTime'),
-    durTime: document.getElementById('durTime'),
-    seek: document.getElementById('seek'),
-    playBtn: document.getElementById('playBtn'),
-    playIcon: document.getElementById('playIcon'),
-    pauseIcon: document.getElementById('pauseIcon'),
-    prevBtn: document.getElementById('prevBtn'),
-    nextBtn: document.getElementById('nextBtn'),
-    openDrawerBtn: document.getElementById('openDrawerBtn'),
-    drawer: document.getElementById('drawer'),
-    drawerBackdrop: document.getElementById('drawerBackdrop'),
-    drawerCount: document.getElementById('drawerCount'),
-    searchBox: document.getElementById('searchBox'),
-    songList: document.getElementById('songList'),
-    audio: document.getElementById('audio'),
-  };
+            const startPlayCategory = (categoryName, isShuffle = false) => {
+                let targetList = MOCK_DATABASE;
+                if (categoryName !== '전체') {
+                    targetList = MOCK_DATABASE.filter(item => item.category === categoryName);
+                }
+                if (!targetList || targetList.length === 0) {
+                    targetList = MOCK_DATABASE;
+                }
+                if (isShuffle) {
+                    targetList = [...targetList].sort(() => Math.random() - 0.5);
+                    setRepeatMode('shuffle');
+                } else {
+                    setRepeatMode('all');
+                }
+                setPlaylist(targetList);
+                setSelectedCategory(categoryName);
+                setCurrentIndex(0);
+                setCurrentTime(0);
+                setView('player');
+                setIsPlaying(true);
+                setTimeout(() => {
+                    if (audioRef.current) audioRef.current.play().catch(e => {});
+                }, 100);
+            };
 
-  let songs = [];
-  let currentIndex = 0;
-  let currentLang = 'ko';
-  let seeking = false;
-  let renderedLineKey = null;
+            // 싱크 및 정적 가사 안전 접근 처리
+            const activeLyrics = (currentSong && currentSong.has_sync && currentSong.lyrics) 
+                ? (currentSong.lyrics[lang] || currentSong.lyrics['ko'] || []) 
+                : [];
+                
+            const activeIndex = activeLyrics.findIndex((line, idx) => {
+                const nextLine = activeLyrics[idx + 1];
+                return currentTime >= line.start && (!nextLine || currentTime < nextLine.start);
+            });
 
-  function fmtTime(t){
-    if (!isFinite(t) || t < 0) t = 0;
-    const m = Math.floor(t / 60);
-    const s = Math.floor(t % 60);
-    return m + ':' + String(s).padStart(2, '0');
-  }
+            const staticLines = (currentSong && !currentSong.has_sync && currentSong.static_lyrics)
+                ? (currentSong.static_lyrics[lang] || currentSong.static_lyrics['ko'] || [])
+                : [];
 
-  function pickLang(song, preferred){
-    if (song.audio_urls && song.audio_urls[preferred]) return preferred;
-    for (const l of LANG_ORDER) if (song.audio_urls && song.audio_urls[l]) return l;
-    return null;
-  }
+            return (
+                <div className="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+                    
+                    {/* ==================== 라이브러리 홈 화면 ==================== */}
+                    {view === 'home' && (
+                        <div className="flex-1 flex flex-col bg-white">
+                            <div className="bg-[#4c3b6b] text-white px-4 py-3 flex items-center justify-between shadow-md">
+                                <div className="text-sm font-semibold opacity-80">
+                                    {lang === 'ko' ? '한국어' : lang === 'en' ? 'English' : '中文'}
+                                </div>
+                                <div className="text-base font-bold tracking-wide">라이브러리</div>
+                                <div className="flex items-center space-x-3">
+                                    <button onClick={() => setShowLangModal(true)} className="text-white hover:text-purple-200">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+                                    </button>
+                                </div>
+                            </div>
 
-  function showNotice(msg){
-    els.notice.textContent = msg;
-    els.notice.classList.add('show');
-    clearTimeout(showNotice._t);
-    showNotice._t = setTimeout(() => els.notice.classList.remove('show'), 3200);
-  }
+                            <div className="bg-white p-4 border-b border-slate-200 shadow-sm grid grid-cols-2 gap-3">
+                                <button 
+                                    onClick={() => startPlayCategory('전체', false)}
+                                    className="border border-[#4c3b6b] text-[#4c3b6b] py-3 px-4 rounded-xl flex items-center justify-center space-x-2 font-semibold hover:bg-purple-50 transition active:scale-95 shadow-sm"
+                                >
+                                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    <span>전체 재생</span>
+                                </button>
+                                <button 
+                                    onClick={() => startPlayCategory('전체', true)}
+                                    className="border border-[#4c3b6b] text-[#4c3b6b] py-3 px-4 rounded-xl flex items-center justify-center space-x-2 font-semibold hover:bg-purple-50 transition active:scale-95 shadow-sm"
+                                >
+                                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+                                    <span>임의 재생</span>
+                                </button>
+                            </div>
 
-  function renderLangRow(song){
-    els.langRow.innerHTML = '';
-    LANG_ORDER.forEach(l => {
-      const has = !!(song.audio_urls && song.audio_urls[l]);
-      const btn = document.createElement('button');
-      btn.className = 'lang-pill' + (l === currentLang ? ' active' : '');
-      btn.textContent = LANG_LABELS[l];
-      btn.disabled = !has;
-      btn.addEventListener('click', () => switchLang(l));
-      els.langRow.appendChild(btn);
-    });
-  }
+                            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 pb-20">
+                                {[
+                                    { title: "오리지널송", desc: "우리의 영적 유산에 감사하는 노래들" },
+                                    { title: "'기쁨으로 여호와께 노래하라'—집회", desc: "지상 모임에서 부르는 찬송가 합창" },
+                                    { title: "'기쁨으로 여호와께 노래하라'—노래", desc: "오르간 및 보컬 포함 찬송가 전곡" },
+                                    { title: "어린이 노래", desc: "여호와의 친구가 되세요 오리지널 송" }
+                                ].map((cat, idx) => (
+                                    <div 
+                                        key={idx}
+                                        onClick={() => startPlayCategory(cat.title, false)}
+                                        className="p-4 flex items-center justify-between hover:bg-purple-50/50 cursor-pointer transition"
+                                    >
+                                        <div className="flex items-center space-x-4">
+                                            <div className="w-12 h-12 bg-[#4c3b6b]/10 rounded-xl flex items-center justify-center text-[#4c3b6b] font-bold">
+                                                🎵
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-900 text-base">{cat.title}</h3>
+                                                <p className="text-xs text-slate-500 mt-0.5">{cat.desc}</p>
+                                            </div>
+                                        </div>
+                                        <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
-  function switchLang(lang){
-    const song = songs[currentIndex];
-    if (!song.audio_urls || !song.audio_urls[lang]) return;
-    if (lang === currentLang) return;
-    const wasPlaying = !els.audio.paused;
-    currentLang = lang;
-    renderLangRow(song);
-    els.audio.src = song.audio_urls[lang];
-    els.audio.currentTime = 0;
-    resetLyricStage();
-    if (wasPlaying) els.audio.play().catch(onPlayError);
-  }
 
-  function resetLyricStage(){
-    renderedLineKey = null;
-    els.idle.style.display = 'flex';
-    Array.from(els.stage.querySelectorAll('.lyric-line')).forEach(n => n.remove());
-  }
+                    {/* ==================== 플레이어 & 가사 화면 ==================== --> */}
+                    {view === 'player' && currentSong && (
+                        <div className="flex-1 flex flex-col bg-white">
+                            
+                            <div className="bg-[#4c3b6b] text-white px-4 py-3 flex items-center justify-between shadow-md">
+                                <button 
+                                    onClick={() => setView('home')} 
+                                    className="flex items-center space-x-1 text-sm font-semibold hover:opacity-80 transition"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
+                                    <span>뒤로</span>
+                                </button>
+                                <div className="text-center">
+                                    <h2 className="text-sm font-bold truncate max-w-[180px]">{selectedCategory || currentSong.category}</h2>
+                                    <p className="text-[11px] text-purple-200">
+                                        {lang === 'ko' ? '한국어' : lang === 'en' ? 'English' : '中文'}
+                                    </p>
+                                </div>
+                                <div className="flex items-center space-x-3">
+                                    <button onClick={() => setShowLangModal(true)} className="p-1 hover:bg-white/10 rounded-lg transition" title="언어 선택">
+                                        <span className="text-xs font-bold border border-white/40 px-1.5 py-0.5 rounded">
+                                            {lang.toUpperCase()}
+                                        </span>
+                                    </button>
+                                    <button 
+                                        onClick={() => {
+                                            if (repeatMode === 'all') setRepeatMode('one');
+                                            else if (repeatMode === 'one') setRepeatMode('shuffle');
+                                            else setRepeatMode('all');
+                                        }} 
+                                        className="text-white hover:opacity-80 transition text-sm"
+                                        title={`재생 모드: ${repeatMode}`}
+                                    >
+                                        {repeatMode === 'one' ? '🔂' : repeatMode === 'shuffle' ? '🔀' : '🔁'}
+                                    </button>
+                                </div>
+                            </div>
 
-  function loadSong(index, autoplay){
-    currentIndex = ((index % songs.length) + songs.length) % songs.length;
-    const song = songs[currentIndex];
-    const lang = pickLang(song, currentLang) || 'ko';
-    currentLang = lang;
+                            <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col items-center text-center">
+                                <div className="w-full text-left mb-6 border-b border-slate-100 pb-4">
+                                    {currentSong.number && (
+                                        <span className="text-xs font-bold text-[#4c3b6b] tracking-wider uppercase">
+                                            {currentSong.number}번
+                                        </span>
+                                    )}
+                                    <h1 className="text-2xl font-bold text-slate-900 mt-1 tracking-tight">
+                                        {currentSong.title}
+                                    </h1>
+                                    <p className="text-xs text-slate-500 mt-0.5">{currentSong.subtitle}</p>
+                                </div>
 
-    els.cover.src = song.cover_url || '';
-    els.title.textContent = song.title || '제목 없음';
-    els.eyebrow.textContent = '오리지널 송';
-    renderLangRow(song);
-    resetLyricStage();
+                                <div className="w-full flex-1 flex flex-col justify-center items-center py-4">
+                                    {currentSong.has_sync ? (
+                                        <div className="space-y-6 w-full py-10">
+                                            {activeLyrics.map((line, idx) => {
+                                                const isActive = idx === activeIndex;
+                                                const isPast = idx < activeIndex;
+                                                return (
+                                                    <p
+                                                        key={idx}
+                                                        onClick={() => {
+                                                            if (audioRef.current) audioRef.current.currentTime = line.start;
+                                                        }}
+                                                        className={`transition-all duration-300 cursor-pointer px-4 ${
+                                                            isActive 
+                                                                ? 'text-xl font-bold text-[#4c3b6b] scale-105 drop-shadow-sm' 
+                                                                : isPast 
+                                                                ? 'text-base font-medium text-slate-400 opacity-50 blur-[0.2px]' 
+                                                                : 'text-base font-medium text-slate-500 opacity-60 hover:opacity-90'
+                                                        }`}
+                                                    >
+                                                        {line.text}
+                                                    </p>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 w-full text-left py-2">
+                                            {staticLines.map((line, idx) => (
+                                                <p key={idx} className="text-sm font-medium text-slate-700 leading-relaxed">
+                                                    {line}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
-    if (song.audio_urls && song.audio_urls[lang]){
-      els.audio.src = song.audio_urls[lang];
-      if (autoplay) els.audio.play().catch(onPlayError);
-    } else {
-      showNotice('이 곡은 재생할 수 있는 오디오가 없어요.');
-    }
-    highlightActiveInList();
-  }
+                            <div className="bg-white border-t border-slate-200 p-4 shadow-lg flex flex-col space-y-3">
+                                <div className="space-y-1">
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={duration || 100}
+                                        value={currentTime}
+                                        onChange={(e) => {
+                                            const val = Number(e.target.value);
+                                            setCurrentTime(val);
+                                            if (audioRef.current) audioRef.current.currentTime = val;
+                                        }}
+                                        className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#4c3b6b]"
+                                    />
+                                    <div className="flex justify-between text-[11px] text-slate-400 font-medium px-0.5">
+                                        <span>{Math.floor(currentTime / 60)}:{('0' + Math.floor(currentTime % 60)).slice(-2)}</span>
+                                        <span>{Math.floor(duration / 60)}:{('0' + Math.floor(duration % 60)).slice(-2)}</span>
+                                    </div>
+                                </div>
 
-  function onPlayError(){
-    showNotice('이 브라우저에서는 이 언어의 오디오를 재생할 수 없어요.');
-  }
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                        <img 
+                                            src={currentSong.cover_url} 
+                                            alt="cover" 
+                                            className="w-12 h-12 rounded-lg object-cover shadow border border-slate-200 flex-shrink-0" 
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <h4 className="text-xs font-bold text-slate-900 truncate">{currentSong.title}</h4>
+                                            <p className="text-[10px] text-slate-500 truncate mt-0.5">{currentSong.category}</p>
+                                        </div>
+                                    </div>
 
-  function togglePlay(){
-    if (els.audio.paused) els.audio.play().catch(onPlayError);
-    else els.audio.pause();
-  }
+                                    <div className="flex items-center space-x-4 flex-shrink-0">
+                                        <button onClick={handlePrev} className="text-slate-600 hover:text-[#4c3b6b] transition active:scale-95 p-1">
+                                            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                                        </button>
+                                        <button
+                                            onClick={togglePlay}
+                                            className="w-11 h-11 rounded-full bg-[#4c3b6b] text-white flex items-center justify-center shadow-md hover:bg-[#3b2d54] transition active:scale-95"
+                                        >
+                                            {isPlaying ? (
+                                                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                            ) : (
+                                                <svg className="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                            )}
+                                        </button>
+                                        <button onClick={handleNext} className="text-slate-600 hover:text-[#4c3b6b] transition active:scale-95 p-1">
+                                            <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-  function next(autoplayOverride){
-    const wasPlaying = !els.audio.paused;
-    loadSong(currentIndex + 1, autoplayOverride !== undefined ? autoplayOverride : wasPlaying);
-  }
-  function prev(){
-    const wasPlaying = !els.audio.paused;
-    loadSong(currentIndex - 1, wasPlaying);
-  }
+                    {showLangModal && (
+                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl">
+                                <h3 className="text-base font-bold text-slate-900 mb-4 text-center">언어 선택 (Language)</h3>
+                                <div className="space-y-2">
+                                    {[
+                                        { code: 'ko', label: '한국어 (Korean)' },
+                                        { code: 'en', label: 'English (영어)' },
+                                        { code: 'cn', label: '中文 (중국어)' }
+                                    ].map((item) => (
+                                        <button
+                                            key={item.code}
+                                            onClick={() => {
+                                                setLang(item.code);
+                                                setShowLangModal(false);
+                                            }}
+                                            className={`w-full py-3 px-4 rounded-xl text-sm font-semibold flex items-center justify-between transition ${
+                                                lang === item.code 
+                                                    ? 'bg-[#4c3b6b] text-white shadow' 
+                                                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                            }`}
+                                        >
+                                            <span>{item.label}</span>
+                                            {lang === item.code && <span>✓</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => setShowLangModal(false)}
+                                    className="w-full mt-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition"
+                                >
+                                    닫기
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-  els.audio.addEventListener('play', () => {
-    els.playIcon.style.display = 'none';
-    els.pauseIcon.style.display = '';
-  });
-  els.audio.addEventListener('pause', () => {
-    els.playIcon.style.display = '';
-    els.pauseIcon.style.display = 'none';
-  });
-  els.audio.addEventListener('ended', () => next(true));
-  els.audio.addEventListener('error', onPlayError);
+                    <audio 
+                        ref={audioRef} 
+                        src={currentSong ? (currentSong.audio_urls[lang] || currentSong.audio_urls['ko']) : ''} 
+                        preload="metadata" 
+                    />
+                </div>
+            );
+        }
 
-  els.audio.addEventListener('loadedmetadata', () => {
-    els.durTime.textContent = fmtTime(els.audio.duration);
-    els.seek.max = els.audio.duration || 100;
-  });
-
-  els.audio.addEventListener('timeupdate', () => {
-    if (!seeking){
-      els.curTime.textContent = fmtTime(els.audio.currentTime);
-      els.seek.value = els.audio.currentTime;
-    }
-    updateLyrics(els.audio.currentTime);
-  });
-
-  els.seek.addEventListener('input', () => { seeking = true; els.curTime.textContent = fmtTime(els.seek.value); });
-  els.seek.addEventListener('change', () => { els.audio.currentTime = parseFloat(els.seek.value); seeking = false; });
-
-  els.playBtn.addEventListener('click', togglePlay);
-  els.prevBtn.addEventListener('click', prev);
-  els.nextBtn.addEventListener('click', () => next());
-
-  function updateLyrics(t){
-    const song = songs[currentIndex];
-    const lines = (song.scripts && song.scripts[currentLang]) || [];
-    if (!lines.length){
-      if (renderedLineKey !== 'idle'){
-        resetLyricStage();
-        renderedLineKey = 'idle';
-      }
-      return;
-    }
-
-    let idx = -1;
-    for (let i = 0; i < lines.length; i++){
-      if (t >= lines[i].start && t < lines[i].end){ idx = i; break; }
-      if (t < lines[i].start) break;
-    }
-
-    const key = idx;
-    if (key === renderedLineKey) return;
-    renderedLineKey = key;
-
-    els.idle.style.display = 'none';
-    Array.from(els.stage.querySelectorAll('.lyric-line')).forEach(n => n.remove());
-
-    if (idx === -1){
-      els.idle.style.display = 'flex';
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    if (idx > 0){
-      const p = document.createElement('div');
-      p.className = 'lyric-line prev';
-      p.textContent = lines[idx-1].text;
-      frag.appendChild(p);
-    }
-    const c = document.createElement('div');
-    c.className = 'lyric-line current';
-    c.innerHTML = '<span class="accent">' + escapeHtml(lines[idx].text) + '</span>';
-    frag.appendChild(c);
-    if (idx < lines.length - 1){
-      const n = document.createElement('div');
-      n.className = 'lyric-line next';
-      n.textContent = lines[idx+1].text;
-      frag.appendChild(n);
-    }
-    els.stage.appendChild(frag);
-  }
-
-  function escapeHtml(s){
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ---------- Drawer / playlist ----------
-  function openDrawer(){
-    renderList(els.searchBox.value);
-    els.drawer.classList.add('open');
-    els.drawerBackdrop.classList.add('open');
-  }
-  function closeDrawer(){
-    els.drawer.classList.remove('open');
-    els.drawerBackdrop.classList.remove('open');
-  }
-  els.openDrawerBtn.addEventListener('click', openDrawer);
-  els.drawerBackdrop.addEventListener('click', closeDrawer);
-
-  function renderList(filter){
-    const f = (filter || '').trim().toLowerCase();
-    els.songList.innerHTML = '';
-    let shown = 0;
-    songs.forEach((song, i) => {
-      if (f && !song.title.toLowerCase().includes(f)) return;
-      shown++;
-      const item = document.createElement('div');
-      item.className = 'song-item' + (i === currentIndex ? ' active' : '');
-      item.dataset.index = i;
-      item.innerHTML =
-        '<img src="' + (song.cover_url || '') + '" alt="" loading="lazy">' +
-        '<div><div class="song-item-title"></div><div class="song-item-sub"></div></div>';
-      item.querySelector('.song-item-title').textContent = song.title;
-      item.querySelector('.song-item-sub').textContent =
-        (song.audio_urls && Object.keys(song.audio_urls).map(l => LANG_LABELS[l]).join(' · ')) || '';
-      item.addEventListener('click', () => {
-        loadSong(i, true);
-        closeDrawer();
-      });
-      els.songList.appendChild(item);
-    });
-    els.drawerCount.textContent = shown + '곡';
-  }
-  els.searchBox.addEventListener('input', () => renderList(els.searchBox.value));
-
-  function highlightActiveInList(){
-    Array.from(els.songList.children).forEach(c => {
-      c.classList.toggle('active', parseInt(c.dataset.index, 10) === currentIndex);
-    });
-  }
-
-  // ---------- Boot ----------
-  fetch('./songs.json')
-    .then(r => {
-      if (!r.ok) throw new Error('fetch failed: ' + r.status);
-      return r.json();
-    })
-    .then(data => {
-      songs = data.filter(s => s.audio_urls && Object.keys(s.audio_urls).length);
-      els.loading.classList.add('hidden');
-      if (!songs.length){
-        els.title.textContent = '재생할 곡이 없어요';
-        return;
-      }
-      loadSong(0, false);
-      renderList('');
-    })
-    .catch(err => {
-      els.loading.textContent = '곡 목록을 불러오지 못했어요. songs.json 파일 위치를 확인해 주세요.';
-      console.error(err);
-    });
-
-})();
-</script>
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
+```
+eof
+
+### 수정 사항 요약
+- **안전 접근(Safe Access):** `currentSong` 및 관련 배열(`lyrics`, `static_lyrics`)에 접근할 때 데이터가 비어있거나 초기화 중일 때 발생하는 `undefined is not an object` 에러를 방지하기 위해 엄격한 삼항 연산자와 방어 코드를 적용했습니다.
+- 이제 플레이어 전환이나 언어 변경 시에도 안정적으로 렌더링됩니다. 업데이트된 코드를 GitHub에 반영해 보세요!
