@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>함께 있어요 — 가사 플레이어</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<style>
+  :root{
+    --ink: #141b24;
+    --panel: #1c2530;
+    --panel-2: #222c38;
+    --hairline: rgba(255,255,255,0.08);
+    --text-dim: #5c6b7a;
+    --text-soft: #93a1ae;
+    --text-bright: #eef1f4;
+    --candle: #e8b84b;
+    --candle-dim: rgba(232,184,75,0.35);
+    --teal: #4f8c8a;
+    --danger: #c96a4f;
+    --radius: 14px;
+    --stage-h: 46vh;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body{
+    margin:0;
+    background: var(--ink);
+    color: var(--text-bright);
+    font-family: 'Pretendard Variable', 'Pretendard', -apple-system, 'Noto Sans SC', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  .app{
+    max-width: 480px;
+    margin: 0 auto;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border-left: 1px solid var(--hairline);
+    border-right: 1px solid var(--hairline);
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding: 18px 20px 14px;
+    flex-shrink:0;
+  }
+  .cover-wrap{
+    width:52px; height:52px;
+    border-radius: 8px;
+    overflow:hidden;
+    flex-shrink:0;
+    background: var(--panel-2);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+  }
+  .cover-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .track-meta{ min-width:0; flex:1; }
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    color: var(--text-soft);
+    text-transform: uppercase;
+  }
+  .track-title{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: 18px;
+    line-height:1.25;
+    margin-top:2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .icon-btn{
+    background:none; border:none; color: var(--text-soft);
+    width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; flex-shrink:0;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .icon-btn:hover{ background: var(--panel-2); color: var(--text-bright); }
+  .icon-btn:focus-visible, button:focus-visible, input:focus-visible{
+    outline: 2px solid var(--teal); outline-offset: 2px;
+  }
+  .icon-btn svg{ width:20px; height:20px; }
+
+  /* ---------- Lyric stage ---------- */
+  .stage{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding: 0 28px;
+    text-align:center;
+    position:relative;
+    min-height: 0;
+  }
+  .lyric-line{
+    font-weight:600;
+    line-height:1.5;
+    transition: opacity 0.35s ease, transform 0.35s ease, filter 0.35s ease;
+    word-break: keep-all;
+  }
+  .lyric-line.prev, .lyric-line.next{
+    font-size: clamp(14px, 3.6vw, 18px);
+    color: var(--text-dim);
+    filter: blur(0.4px);
+    opacity: 0.55;
+  }
+  .lyric-line.prev{ transform: translateY(-4px); margin-bottom: 22px; }
+  .lyric-line.next{ transform: translateY(4px); margin-top: 22px; }
+  .lyric-line.current{
+    font-size: clamp(22px, 6vw, 30px);
+    color: var(--text-bright);
+    text-shadow: 0 0 22px var(--candle-dim);
+  }
+  .lyric-line.current .accent{ color: var(--candle); }
+  .lyric-idle{
+    font-family:'Fraunces', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--text-dim);
+    letter-spacing: 0.02em;
+  }
+  .lyric-idle .dots span{
+    animation: blink 1.4s infinite;
+    animation-delay: calc(var(--i) * 0.2s);
+  }
+  @keyframes blink{ 0%,100%{opacity:.25;} 50%{opacity:1;} }
+
+  .lang-row{
+    display:flex; gap:8px; justify-content:center;
+    padding: 10px 20px 0;
+    flex-shrink:0;
+  }
+  .lang-pill{
+    font-family:'Space Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--hairline);
+    background: transparent;
+    color: var(--text-dim);
+    cursor:pointer;
+    transition: all 0.15s ease;
+  }
+  .lang-pill:disabled{ opacity: 0.25; cursor: not-allowed; }
+  .lang-pill.active{
+    color: var(--ink);
+    background: var(--candle);
+    border-color: var(--candle);
+  }
+  .lang-pill:not(:disabled):hover{ color: var(--text-bright); border-color: var(--text-soft); }
+
+  .notice{
+    text-align:center;
+    font-size: 12px;
+    color: var(--danger);
+    height: 16px;
+    padding-top: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .notice.show{ opacity: 1; }
+
+  /* ---------- Transport ---------- */
+  .transport{
+    flex-shrink:0;
+    padding: 10px 22px calc(18px + env(safe-area-inset-bottom));
+  }
+  .seek-row{
+    display:flex; align-items:center; gap:10px;
+    margin-bottom: 14px;
+  }
+  .time{
+    font-family:'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-soft);
+    min-width: 34px;
+  }
+  .time.right{ text-align:right; }
+  .seek{
+    -webkit-appearance:none;
+    appearance:none;
+    flex:1;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--panel-2);
+    outline:none;
+    cursor:pointer;
+  }
+  .seek::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:12px; height:12px; border-radius:50%;
+    background: var(--teal);
+    box-shadow: 0 0 0 3px rgba(79,140,138,0.2);
+    margin-top: -4.5px;
+  }
+  .seek::-webkit-slider-runnable-track{ height:3px; border-radius:3px; }
+  .seek::-moz-range-thumb{
+    width:12px; height:12px; border-radius:50%; border:none;
+    background: var(--teal);
+  }
+
+  .controls{
+    display:flex; align-items:center; justify-content:center; gap: 28px;
+  }
+  .ctrl-btn{
+    background:none; border:none; color: var(--text-bright);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .ctrl-btn svg{ width:22px; height:22px; }
+  .ctrl-btn.play-pause{
+    width:56px; height:56px;
+    border-radius:50%;
+    background: var(--panel-2);
+    border: 1px solid var(--hairline);
+    transition: transform 0.12s ease, background 0.15s ease;
+  }
+  .ctrl-btn.play-pause:hover{ background: var(--panel); }
+  .ctrl-btn.play-pause:active{ transform: scale(0.94); }
+  .ctrl-btn.play-pause svg{ width:22px; height:22px; }
+
+  /* ---------- Playlist drawer ---------- */
+  .drawer-backdrop{
+    position:absolute; inset:0;
+    background: rgba(10,13,17,0.6);
+    opacity:0; pointer-events:none;
+    transition: opacity 0.25s ease;
+    z-index: 5;
+  }
+  .drawer-backdrop.open{ opacity:1; pointer-events:auto; }
+  .drawer{
+    position:absolute; left:0; right:0; bottom:0;
+    height: 72%;
+    background: var(--panel);
+    border-top: 1px solid var(--hairline);
+    border-radius: 18px 18px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(.32,.72,0,1);
+    z-index: 6;
+    display:flex; flex-direction:column;
+    box-shadow: 0 -12px 30px rgba(0,0,0,0.4);
+  }
+  .drawer.open{ transform: translateY(0); }
+  .drawer-handle{
+    width:36px; height:4px; border-radius:2px;
+    background: var(--hairline);
+    margin: 12px auto 6px;
+    flex-shrink:0;
+  }
+  .drawer-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 4px 20px 12px;
+    flex-shrink:0;
+  }
+  .drawer-head h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: 17px;
+    margin:0;
+  }
+  .drawer-count{ font-family:'Space Mono', monospace; font-size:11px; color:var(--text-soft); }
+  .search-box{
+    margin: 0 20px 10px;
+    padding: 9px 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    color: var(--text-bright);
+    font-size: 14px;
+  }
+  .search-box::placeholder{ color: var(--text-dim); }
+  .song-list{
+    overflow-y:auto;
+    flex:1;
+    padding: 0 8px 14px;
+  }
+  .song-item{
+    display:flex; align-items:center; gap:12px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    cursor:pointer;
+  }
+  .song-item:hover{ background: var(--panel-2); }
+  .song-item.active{ background: var(--panel-2); }
+  .song-item.active .song-item-title{ color: var(--candle); }
+  .song-item img{
+    width:38px; height:38px; border-radius:6px; object-fit:cover; flex-shrink:0;
+    background: var(--panel-2);
+  }
+  .song-item-title{
+    font-size: 14.5px; font-weight:500;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .song-item-sub{
+    font-family:'Space Mono', monospace;
+    font-size: 10.5px; color: var(--text-dim);
+    margin-top:2px;
+  }
+
+  ::-webkit-scrollbar{ width:6px; }
+  ::-webkit-scrollbar-thumb{ background: var(--panel-2); border-radius:3px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  .loading-screen{
+    position:fixed; inset:0; background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); font-family:'Fraunces',serif; font-style:italic;
+    z-index:20;
+  }
+  .loading-screen.hidden{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loadingScreen">불러오는 중…</div>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="cover-wrap"><img id="coverImg" alt=""></div>
+    <div class="track-meta">
+      <div class="eyebrow" id="eyebrow">ORIGINAL SONG</div>
+      <div class="track-title" id="trackTitle">—</div>
+    </div>
+    <button class="icon-btn" id="openDrawerBtn" aria-label="곡 목록 열기" title="곡 목록">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg>
+    </button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="lyric-idle" id="lyricIdle">
+      연주 중<span class="dots"><span style="--i:0">.</span><span style="--i:1">.</span><span style="--i:2">.</span></span>
+    </div>
+  </div>
+
+  <div class="lang-row" id="langRow"></div>
+  <div class="notice" id="notice"></div>
+
+  <div class="transport">
+    <div class="seek-row">
+      <span class="time" id="curTime">0:00</span>
+      <input type="range" class="seek" id="seek" min="0" max="100" value="0" step="0.1" aria-label="재생 위치">
+      <span class="time right" id="durTime">0:00</span>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="prevBtn" aria-label="이전 곡">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6L9 12l11 6z"/></svg>
+      </button>
+      <button class="ctrl-btn play-pause" id="playBtn" aria-label="재생">
+        <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="nextBtn" aria-label="다음 곡">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l11 6-11 6z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-head">
+      <h2>전체 곡 목록</h2>
+      <span class="drawer-count" id="drawerCount">0곡</span>
+    </div>
+    <input type="text" class="search-box" id="searchBox" placeholder="제목으로 찾기">
+    <div class="song-list" id="songList"></div>
+  </div>
+
+</div>
+
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+(function(){
+  "use strict";
+
+  const LANG_LABELS = { ko: 'KO', en: 'EN', cn: '中文' };
+  const LANG_ORDER = ['ko','en','cn'];
+
+  const els = {
+    loading: document.getElementById('loadingScreen'),
+    cover: document.getElementById('coverImg'),
+    eyebrow: document.getElementById('eyebrow'),
+    title: document.getElementById('trackTitle'),
+    stage: document.getElementById('stage'),
+    idle: document.getElementById('lyricIdle'),
+    langRow: document.getElementById('langRow'),
+    notice: document.getElementById('notice'),
+    curTime: document.getElementById('curTime'),
+    durTime: document.getElementById('durTime'),
+    seek: document.getElementById('seek'),
+    playBtn: document.getElementById('playBtn'),
+    playIcon: document.getElementById('playIcon'),
+    pauseIcon: document.getElementById('pauseIcon'),
+    prevBtn: document.getElementById('prevBtn'),
+    nextBtn: document.getElementById('nextBtn'),
+    openDrawerBtn: document.getElementById('openDrawerBtn'),
+    drawer: document.getElementById('drawer'),
+    drawerBackdrop: document.getElementById('drawerBackdrop'),
+    drawerCount: document.getElementById('drawerCount'),
+    searchBox: document.getElementById('searchBox'),
+    songList: document.getElementById('songList'),
+    audio: document.getElementById('audio'),
+  };
+
+  let songs = [];
+  let currentIndex = 0;
+  let currentLang = 'ko';
+  let seeking = false;
+  let renderedLineKey = null;
+
+  function fmtTime(t){
+    if (!isFinite(t) || t < 0) t = 0;
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    return m + ':' + String(s).padStart(2, '0');
+  }
+
+  function pickLang(song, preferred){
+    if (song.audio_urls && song.audio_urls[preferred]) return preferred;
+    for (const l of LANG_ORDER) if (song.audio_urls && song.audio_urls[l]) return l;
+    return null;
+  }
+
+  function showNotice(msg){
+    els.notice.textContent = msg;
+    els.notice.classList.add('show');
+    clearTimeout(showNotice._t);
+    showNotice._t = setTimeout(() => els.notice.classList.remove('show'), 3200);
+  }
+
+  function renderLangRow(song){
+    els.langRow.innerHTML = '';
+    LANG_ORDER.forEach(l => {
+      const has = !!(song.audio_urls && song.audio_urls[l]);
+      const btn = document.createElement('button');
+      btn.className = 'lang-pill' + (l === currentLang ? ' active' : '');
+      btn.textContent = LANG_LABELS[l];
+      btn.disabled = !has;
+      btn.addEventListener('click', () => switchLang(l));
+      els.langRow.appendChild(btn);
+    });
+  }
+
+  function switchLang(lang){
+    const song = songs[currentIndex];
+    if (!song.audio_urls || !song.audio_urls[lang]) return;
+    if (lang === currentLang) return;
+    const wasPlaying = !els.audio.paused;
+    currentLang = lang;
+    renderLangRow(song);
+    els.audio.src = song.audio_urls[lang];
+    els.audio.currentTime = 0;
+    resetLyricStage();
+    if (wasPlaying) els.audio.play().catch(onPlayError);
+  }
+
+  function resetLyricStage(){
+    renderedLineKey = null;
+    els.idle.style.display = 'flex';
+    Array.from(els.stage.querySelectorAll('.lyric-line')).forEach(n => n.remove());
+  }
+
+  function loadSong(index, autoplay){
+    currentIndex = ((index % songs.length) + songs.length) % songs.length;
+    const song = songs[currentIndex];
+    const lang = pickLang(song, currentLang) || 'ko';
+    currentLang = lang;
+
+    els.cover.src = song.cover_url || '';
+    els.title.textContent = song.title || '제목 없음';
+    els.eyebrow.textContent = '오리지널 송';
+    renderLangRow(song);
+    resetLyricStage();
+
+    if (song.audio_urls && song.audio_urls[lang]){
+      els.audio.src = song.audio_urls[lang];
+      if (autoplay) els.audio.play().catch(onPlayError);
+    } else {
+      showNotice('이 곡은 재생할 수 있는 오디오가 없어요.');
+    }
+    highlightActiveInList();
+  }
+
+  function onPlayError(){
+    showNotice('이 브라우저에서는 이 언어의 오디오를 재생할 수 없어요.');
+  }
+
+  function togglePlay(){
+    if (els.audio.paused) els.audio.play().catch(onPlayError);
+    else els.audio.pause();
+  }
+
+  function next(autoplayOverride){
+    const wasPlaying = !els.audio.paused;
+    loadSong(currentIndex + 1, autoplayOverride !== undefined ? autoplayOverride : wasPlaying);
+  }
+  function prev(){
+    const wasPlaying = !els.audio.paused;
+    loadSong(currentIndex - 1, wasPlaying);
+  }
+
+  els.audio.addEventListener('play', () => {
+    els.playIcon.style.display = 'none';
+    els.pauseIcon.style.display = '';
+  });
+  els.audio.addEventListener('pause', () => {
+    els.playIcon.style.display = '';
+    els.pauseIcon.style.display = 'none';
+  });
+  els.audio.addEventListener('ended', () => next(true));
+  els.audio.addEventListener('error', onPlayError);
+
+  els.audio.addEventListener('loadedmetadata', () => {
+    els.durTime.textContent = fmtTime(els.audio.duration);
+    els.seek.max = els.audio.duration || 100;
+  });
+
+  els.audio.addEventListener('timeupdate', () => {
+    if (!seeking){
+      els.curTime.textContent = fmtTime(els.audio.currentTime);
+      els.seek.value = els.audio.currentTime;
+    }
+    updateLyrics(els.audio.currentTime);
+  });
+
+  els.seek.addEventListener('input', () => { seeking = true; els.curTime.textContent = fmtTime(els.seek.value); });
+  els.seek.addEventListener('change', () => { els.audio.currentTime = parseFloat(els.seek.value); seeking = false; });
+
+  els.playBtn.addEventListener('click', togglePlay);
+  els.prevBtn.addEventListener('click', prev);
+  els.nextBtn.addEventListener('click', () => next());
+
+  function updateLyrics(t){
+    const song = songs[currentIndex];
+    const lines = (song.scripts && song.scripts[currentLang]) || [];
+    if (!lines.length){
+      if (renderedLineKey !== 'idle'){
+        resetLyricStage();
+        renderedLineKey = 'idle';
+      }
+      return;
+    }
+
+    let idx = -1;
+    for (let i = 0; i < lines.length; i++){
+      if (t >= lines[i].start && t < lines[i].end){ idx = i; break; }
+      if (t < lines[i].start) break;
+    }
+
+    const key = idx;
+    if (key === renderedLineKey) return;
+    renderedLineKey = key;
+
+    els.idle.style.display = 'none';
+    Array.from(els.stage.querySelectorAll('.lyric-line')).forEach(n => n.remove());
+
+    if (idx === -1){
+      els.idle.style.display = 'flex';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    if (idx > 0){
+      const p = document.createElement('div');
+      p.className = 'lyric-line prev';
+      p.textContent = lines[idx-1].text;
+      frag.appendChild(p);
+    }
+    const c = document.createElement('div');
+    c.className = 'lyric-line current';
+    c.innerHTML = '<span class="accent">' + escapeHtml(lines[idx].text) + '</span>';
+    frag.appendChild(c);
+    if (idx < lines.length - 1){
+      const n = document.createElement('div');
+      n.className = 'lyric-line next';
+      n.textContent = lines[idx+1].text;
+      frag.appendChild(n);
+    }
+    els.stage.appendChild(frag);
+  }
+
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ---------- Drawer / playlist ----------
+  function openDrawer(){
+    renderList(els.searchBox.value);
+    els.drawer.classList.add('open');
+    els.drawerBackdrop.classList.add('open');
+  }
+  function closeDrawer(){
+    els.drawer.classList.remove('open');
+    els.drawerBackdrop.classList.remove('open');
+  }
+  els.openDrawerBtn.addEventListener('click', openDrawer);
+  els.drawerBackdrop.addEventListener('click', closeDrawer);
+
+  function renderList(filter){
+    const f = (filter || '').trim().toLowerCase();
+    els.songList.innerHTML = '';
+    let shown = 0;
+    songs.forEach((song, i) => {
+      if (f && !song.title.toLowerCase().includes(f)) return;
+      shown++;
+      const item = document.createElement('div');
+      item.className = 'song-item' + (i === currentIndex ? ' active' : '');
+      item.dataset.index = i;
+      item.innerHTML =
+        '<img src="' + (song.cover_url || '') + '" alt="" loading="lazy">' +
+        '<div><div class="song-item-title"></div><div class="song-item-sub"></div></div>';
+      item.querySelector('.song-item-title').textContent = song.title;
+      item.querySelector('.song-item-sub').textContent =
+        (song.audio_urls && Object.keys(song.audio_urls).map(l => LANG_LABELS[l]).join(' · ')) || '';
+      item.addEventListener('click', () => {
+        loadSong(i, true);
+        closeDrawer();
+      });
+      els.songList.appendChild(item);
+    });
+    els.drawerCount.textContent = shown + '곡';
+  }
+  els.searchBox.addEventListener('input', () => renderList(els.searchBox.value));
+
+  function highlightActiveInList(){
+    Array.from(els.songList.children).forEach(c => {
+      c.classList.toggle('active', parseInt(c.dataset.index, 10) === currentIndex);
+    });
+  }
+
+  // ---------- Boot ----------
+  fetch('./songs.json')
+    .then(r => {
+      if (!r.ok) throw new Error('fetch failed: ' + r.status);
+      return r.json();
+    })
+    .then(data => {
+      songs = data.filter(s => s.audio_urls && Object.keys(s.audio_urls).length);
+      els.loading.classList.add('hidden');
+      if (!songs.length){
+        els.title.textContent = '재생할 곡이 없어요';
+        return;
+      }
+      loadSong(0, false);
+      renderList('');
+    })
+    .catch(err => {
+      els.loading.textContent = '곡 목록을 불러오지 못했어요. songs.json 파일 위치를 확인해 주세요.';
+      console.error(err);
+    });
+
+})();
+</script>
+</body>
+</html>
