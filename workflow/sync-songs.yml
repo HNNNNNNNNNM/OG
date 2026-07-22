@@ -1,0 +1,43 @@
+name: Sync JW songs
+
+on:
+  schedule:
+    # 매월 1,6,11,16,21,26일 UTC 18:00(한국시간 새벽 3시)에 실행 — 대략 5일 간격
+    - cron: '0 18 1,6,11,16,21,26 * *'
+  workflow_dispatch: {}   # Actions 탭에서 수동으로도 실행 가능
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 의존성 설치 (requests, ffmpeg)
+        run: |
+          pip install requests
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg
+
+      - name: 크롤러 실행
+        run: python the_collector.py
+
+      - name: 변경사항 있으면 커밋 & 푸시
+        run: |
+          git config user.name "song-sync-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if git diff --quiet -- songs.json; then
+            echo "새 곡 없음 — 변경사항 없음"
+          else
+            git add songs.json
+            git commit -m "곡 자동 동기화 $(date -u +%Y-%m-%d)"
+            git push
+          fi
