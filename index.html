@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>ORIGINAL SONGS LYLICS</title>
+<title>노래 가사</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
   :root{
@@ -19,7 +19,7 @@
     --danger: #b5452f;
   }
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body{ height:100%; }
+  html, body{ height:100%; overflow:hidden; overscroll-behavior:none; position:fixed; inset:0; width:100%; }
   body{
     margin:0;
     background: #d9d9dc;
@@ -32,6 +32,7 @@
   .app{
     max-width: 480px;
     margin: 0 auto;
+    height: 100%;
     height: 100dvh;
     background: var(--bg);
     position: relative;
@@ -167,21 +168,21 @@
     flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
     padding: 6vh 26px;
   }
-  .lyrics-inner{ min-height:100%; }
+  .lyrics-inner{ min-height:100%; text-align:center; }
   .lyric-line-item{
-    font-size: 18px;
-    line-height: 1.85;
-    font-weight: 500;
+    font-size: 21px;
+    line-height: 1.9;
+    font-weight: 600;
     color: var(--gray-light);
     transition: color 0.25s ease, font-weight 0.25s ease;
     cursor:pointer;
-    padding: 2px 0;
+    padding: 3px 0;
   }
   .lyric-line-item.past{ color: var(--gray); }
   .lyric-line-item.active{
     color: var(--ink);
-    font-weight: 700;
-    font-size: 19px;
+    font-weight: 800;
+    font-size: 23px;
   }
   .lyric-empty{
     color: var(--gray); font-size:14px; text-align:center; padding-top:40%;
@@ -427,6 +428,12 @@
         <span class="time right" id="durTime">0:00</span>
       </div>
       <div class="lang-row" id="playerLangRow"></div>
+      <div class="lang-row" id="rateRow">
+        <button class="lang-pill" data-rate="0.75">0.75x</button>
+        <button class="lang-pill" data-rate="1">1x</button>
+        <button class="lang-pill" data-rate="1.25">1.25x</button>
+        <button class="lang-pill" data-rate="1.5">1.5x</button>
+      </div>
       <div class="controls-row">
         <button class="ctrl-btn mode-btn" id="shuffleBtn" aria-label="임의 재생">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
@@ -489,7 +496,8 @@
   const CATEGORY_LABELS = {
     VODOriginalSongs: '오리지널 송',
     VODCjOriginalSongs: '어린이 오리지널 송',
-    VODSngToJehovah: "기쁨으로 여호와께 노래하라"
+    SJJChorus: "'기쁨으로 여호와께 노래하라'—노래",
+    VODSJJMeetings: "'기쁨으로 여호와께 노래하라'—집회"
   };
 
   const $ = (id) => document.getElementById(id);
@@ -512,6 +520,7 @@
     playerTitle: $('playerTitle'),
     playerSub: $('playerSub'),
     playerLangRow: $('playerLangRow'),
+    rateRow: $('rateRow'),
     lyricsScroll: $('lyricsScroll'),
     lyricsInner: $('lyricsInner'),
     curTime: $('curTime'),
@@ -550,6 +559,7 @@
   let songs = [];              // all songs, as loaded
   let categories = [];         // [{key, label, thumb, indices:[...]}]
   let currentLang = 'ko';
+  let currentRate = 1;
 
   // navigation stack: array of {name, data}
   let navStack = [{ name: 'library' }];
@@ -714,6 +724,7 @@
 
   function loadAtPlayPos(autoplay){
     if (playPos < 0 || playPos >= playOrder.length) return;
+    songFinishing = false;
     const globalIdx = playOrder[playPos];
     const song = songs[globalIdx];
     const lang = pickPlayableLang(song, currentLang);
@@ -730,6 +741,7 @@
     buildLyricsView(song);
 
     els.audio.src = song.audio_urls[lang];
+    els.audio.playbackRate = currentRate;
     if (autoplay) els.audio.play().catch(onPlayError);
 
     highlightNowPlayingRows();
@@ -830,6 +842,15 @@
   els.shuffleBtn.addEventListener('click', toggleShuffle);
   els.repeatBtn.addEventListener('click', cycleRepeat);
 
+  els.rateRow.querySelectorAll('.lang-pill').forEach(btn => {
+    if (parseFloat(btn.dataset.rate) === currentRate) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      currentRate = parseFloat(btn.dataset.rate);
+      els.audio.playbackRate = currentRate;
+      els.rateRow.querySelectorAll('.lang-pill').forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+
   els.miniPlayer.addEventListener('click', () => { if (playPos >= 0) navigateTo('player', {}); });
 
   els.audio.addEventListener('play', () => {
@@ -840,11 +861,26 @@
     els.playIcon.style.display = ''; els.pauseIcon.style.display = 'none';
     els.miniPlayIcon.style.display = ''; els.miniPauseIcon.style.display = 'none';
   });
-  els.audio.addEventListener('ended', () => {
-    if (repeatMode === 'one'){ els.audio.currentTime = 0; els.audio.play().catch(onPlayError); return; }
-    next(true);
+  let songFinishing = false;
+
+  function handleSongFinished(){
+    if (songFinishing) return;
+    songFinishing = true;
+    if (repeatMode === 'one'){
+      els.audio.currentTime = 0;
+      els.audio.play().catch(onPlayError);
+    } else {
+      next(true);
+    }
+    setTimeout(() => { songFinishing = false; }, 800);
+  }
+
+  els.audio.addEventListener('ended', handleSongFinished);
+  els.audio.addEventListener('error', () => {
+    onPlayError();
+    // 재생 자체가 깨진 곡이면 몇 초 뒤 자동으로 다음 곡으로 넘어감 (무한정 멈춰있지 않도록)
+    setTimeout(() => { if (els.audio.error) handleSongFinished(); }, 2500);
   });
-  els.audio.addEventListener('error', onPlayError);
   els.audio.addEventListener('loadedmetadata', () => {
     els.durTime.textContent = fmtTime(els.audio.duration);
     els.seek.max = els.audio.duration || 100;
@@ -857,6 +893,10 @@
     const pct = els.audio.duration ? (els.audio.currentTime / els.audio.duration) * 100 : 0;
     els.miniProgressFill.style.width = pct + '%';
     updateLyricHighlight(els.audio.currentTime);
+    // 일부 스트림에서 'ended' 이벤트가 안 뜨는 경우를 대비한 안전장치
+    if (els.audio.duration && !seeking && els.audio.currentTime >= els.audio.duration - 0.3){
+      handleSongFinished();
+    }
   });
   els.seek.addEventListener('input', () => { seeking = true; els.curTime.textContent = fmtTime(els.seek.value); });
   els.seek.addEventListener('change', () => { els.audio.currentTime = parseFloat(els.seek.value); seeking = false; });
