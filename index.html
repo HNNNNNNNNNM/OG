@@ -19,7 +19,11 @@
     --danger: #b5452f;
   }
   *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body{ height:100%; overflow:hidden; overscroll-behavior:none; position:fixed; inset:0; width:100%; }
+  html{ height:100%; overflow:hidden; }
+  body{
+    height:100%; width:100%; overflow:hidden; overscroll-behavior:none;
+    position:fixed; inset:0;
+  }
   body{
     margin:0;
     background: #d9d9dc;
@@ -30,7 +34,7 @@
   button{ font-family: inherit; }
 
   .app{
-    max-width: 480px;
+    max-width: clamp(480px, 85vw, 860px);
     margin: 0 auto;
     height: 100%;
     height: 100dvh;
@@ -77,8 +81,8 @@
   }
   .lh-sub{ font-size: 12.5px; color: var(--gray); margin-top:1px; }
   .listheader-icons{
-    display:flex; align-items:center; gap:2px;
-    width: 74px; justify-content:flex-end; flex-shrink:0;
+    display:flex; align-items:center; gap:6px;
+    min-width: 74px; justify-content:flex-end; flex-shrink:0;
   }
   .icon-btn{
     background:none; border:none; color: var(--purple);
@@ -89,6 +93,15 @@
   .icon-btn:hover{ background: rgba(91,75,147,0.08); }
   .icon-btn svg{ width:20px; height:20px; }
   .icon-btn.active{ color: var(--bg); background: var(--purple); }
+
+  .lang-select-btn{
+    display:flex; align-items:center; gap:3px;
+    background: var(--purple-tint); border: 1.3px solid var(--purple);
+    color: var(--purple); font-weight:700; font-size:12.5px;
+    padding: 6px 9px; border-radius: 999px; cursor:pointer; flex-shrink:0;
+  }
+  .lang-select-btn svg{ width:13px; height:13px; }
+  .lang-select-btn:active{ background: var(--purple); color:#fff; }
 
   .playbar-row{
     display:flex; gap:12px;
@@ -329,6 +342,37 @@
 
   ::-webkit-scrollbar{ width:0; }
 
+  @media (min-width: 600px){
+    .lyric-line-item{ font-size: 26px; line-height: 2; }
+    .lyric-line-item.active{ font-size: 29px; }
+    .lh-title{ font-size: 20px; }
+    .lh-sub{ font-size: 14px; }
+    .ph-title{ font-size: 18px; }
+    .ph-sub{ font-size: 13.5px; }
+    .cat-name{ font-size: 18px; }
+    .cat-count{ font-size: 14px; }
+    .cat-thumb{ width:66px; height:66px; }
+    .song-row-title{ font-size: 17px; }
+    .song-thumb{ width:46px; height:46px; }
+    .playbar-btn{ font-size: 17px; padding: 13px 8px; }
+    .ctrl-btn.play-pause{ width:64px; height:64px; }
+    .ctrl-btn.play-pause svg{ width:28px; height:28px; }
+    .ctrl-btn.big{ width:50px; height:50px; }
+    .ctrl-btn.big svg{ width:28px; height:28px; }
+    .lang-pill, .rate-pill{ font-size: 13.5px; padding: 7px 15px; }
+    .lang-select-btn{ font-size: 14px; padding: 7px 12px; }
+    .mini-title{ font-size: 15.5px; }
+    .search-input{ font-size: 17px; }
+  }
+  @media (min-width: 900px){
+    .lyric-line-item{ font-size: 30px; line-height: 2.05; }
+    .lyric-line-item.active{ font-size: 34px; }
+    .lh-title{ font-size: 22px; }
+    .ph-title{ font-size: 20px; }
+    .cat-name{ font-size: 19.5px; }
+    .song-row-title{ font-size: 18px; }
+  }
+
   @media (prefers-reduced-motion: reduce){
     *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
   }
@@ -353,8 +397,9 @@
           <button class="icon-btn" id="libSearchBtn" aria-label="검색" title="검색">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <button class="icon-btn" id="libLangBtn" aria-label="언어" title="언어">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M4 12h6M4 18h12M17 6l4 12M13 15h6"/></svg>
+          <button class="lang-select-btn" id="libLangBtn" aria-label="언어 선택" title="언어 선택">
+            <span id="libLangBtnText">KO</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>
       </div>
@@ -385,8 +430,9 @@
           <button class="icon-btn" id="catSearchBtn" aria-label="검색" title="검색">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
-          <button class="icon-btn" id="catLangBtn" aria-label="언어" title="언어">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M4 12h6M4 18h12M17 6l4 12M13 15h6"/></svg>
+          <button class="lang-select-btn" id="catLangBtn" aria-label="언어 선택" title="언어 선택">
+            <span id="catLangBtnText">KO</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
         </div>
       </div>
@@ -412,8 +458,9 @@
         <div class="ph-title" id="playerTitle">—</div>
         <div class="ph-sub" id="playerSub"></div>
       </div>
-      <button class="icon-btn" id="playerLangBtn" aria-label="언어">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M4 12h6M4 18h12M17 6l4 12M13 15h6"/></svg>
+      <button class="lang-select-btn" id="playerLangBtn" aria-label="언어 선택" title="언어 선택">
+        <span id="playerLangBtnText">KO</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
     </header>
 
@@ -492,6 +539,7 @@
   "use strict";
 
   const LANG_LABELS = { ko: '한국어', en: 'English', cn: '中文' };
+  const SHORT_LANG_LABEL = { ko: 'KO', en: 'EN', cn: '中文' };
   const LANG_ORDER = ['ko','en','cn'];
   const CATEGORY_LABELS = {
     VODOriginalSongs: '오리지널 송',
@@ -591,6 +639,27 @@
 
   function categoryLabel(key){ return CATEGORY_LABELS[key] || key; }
 
+  function songTitle(song, lang){
+    lang = lang || currentLang;
+    const t = song.title;
+    if (typeof t === 'string') return t;
+    if (!t) return '(제목 없음)';
+    return t[lang] || t.ko || t.en || t.cn || '(제목 없음)';
+  }
+  function songNumber(song){
+    const raw = songTitle(song, 'ko') || songTitle(song, 'en') || songTitle(song, 'cn') || '';
+    const m = String(raw).match(/^(\d+)[.．]/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function hasLang(song, lang){ return !!(song.audio_urls && song.audio_urls[lang]); }
+  function updateLangButtonLabels(){
+    const s = SHORT_LANG_LABEL[currentLang];
+    ['libLangBtnText','catLangBtnText','playerLangBtnText'].forEach(id => {
+      const el = $(id);
+      if (el) el.textContent = s;
+    });
+  }
+
   function shuffleArray(arr){
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--){
@@ -635,11 +704,24 @@
   function buildCategories(){
     const map = new Map();
     songs.forEach((song, idx) => {
+      if (!hasLang(song, currentLang)) return; // 선택된 언어로 재생 가능한 곡만
       const key = song.category || '기타';
       if (!map.has(key)) map.set(key, { key, label: categoryLabel(key), thumb: song.cover_url || '', indices: [] });
-      map.get(key).indices.push(idx);
+      const c = map.get(key);
+      c.indices.push(idx);
+      if (!c.thumb && song.cover_url) c.thumb = song.cover_url;
     });
     categories = Array.from(map.values());
+    categories.forEach(cat => {
+      if (cat.key === 'VODOriginalSongs') return; // 오리지널송은 기존 순서(최신순) 유지
+      cat.indices.sort((a, b) => {
+        const na = songNumber(songs[a]), nb = songNumber(songs[b]);
+        if (na === null && nb === null) return 0;
+        if (na === null) return 1;
+        if (nb === null) return -1;
+        return na - nb;
+      });
+    });
   }
 
   function renderLibraryScreen(){
@@ -666,7 +748,11 @@
   els.libPlayAllBtn.addEventListener('click', () => startPlaylist(allIndices(), false));
   els.libShuffleBtn.addEventListener('click', () => startPlaylist(allIndices(), true));
 
-  function allIndices(){ return songs.map((_, i) => i); }
+  function allIndices(){
+    const out = [];
+    songs.forEach((s, i) => { if (hasLang(s, currentLang)) out.push(i); });
+    return out;
+  }
 
   // ---------------- Category screen ----------------
   function renderCategoryScreen(key){
@@ -687,7 +773,7 @@
         '<span class="song-num">' + (i + 1) + '</span>' +
         '<img class="song-thumb" src="' + (song.cover_url || '') + '" alt="" loading="lazy">' +
         '<span class="song-row-title"></span>';
-      row.querySelector('.song-row-title').textContent = song.title;
+      row.querySelector('.song-row-title').textContent = songTitle(song);
       row.addEventListener('click', () => startPlaylist(cat.indices, false, globalIdx));
       els.categorySongList.appendChild(row);
     });
@@ -730,10 +816,11 @@
     const lang = pickPlayableLang(song, currentLang);
     if (!lang){ showToast('이 곡은 재생할 수 있는 오디오가 없어요.'); return; }
     currentLang = lang;
+    updateLangButtonLabels();
 
-    els.playerTitle.textContent = song.title;
+    els.playerTitle.textContent = songTitle(song);
     els.playerSub.textContent = LANG_LABELS[currentLang];
-    els.miniTitle.textContent = song.title;
+    els.miniTitle.textContent = songTitle(song);
     els.miniCover.src = song.cover_url || '';
     updateMediaSession(song);
 
@@ -755,7 +842,7 @@
       { src: song.cover_url, sizes: '512x512', type: 'image/jpeg' }
     ] : [];
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: song.title,
+      title: songTitle(song),
       artist: LANG_LABELS[currentLang],
       album: categoryLabel(song.category),
       artwork: artwork
@@ -923,7 +1010,10 @@
     const savedTime = els.audio.currentTime;
     const wasPlaying = !els.audio.paused;
     currentLang = lang;
+    updateLangButtonLabels();
+    els.playerTitle.textContent = songTitle(song);
     els.playerSub.textContent = LANG_LABELS[currentLang];
+    els.miniTitle.textContent = songTitle(song);
     renderLangRow(song);
     buildLyricsView(song);
     updateMediaSession(song);
@@ -971,7 +1061,13 @@
       item.el.classList.toggle('past', i < idx);
     });
     if (idx >= 0){
-      lyricLineEls[idx].el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const container = els.lyricsScroll;
+      const target = lyricLineEls[idx].el;
+      const targetCenter = target.offsetTop + target.clientHeight / 2;
+      let top = targetCenter - container.clientHeight / 2;
+      const maxTop = Math.max(0, container.scrollHeight - container.clientHeight);
+      top = Math.max(0, Math.min(top, maxTop));
+      container.scrollTo({ top, behavior: 'smooth' });
     }
   }
 
@@ -986,11 +1082,27 @@
       btn.disabled = !has;
       if (l === currentLang) btn.classList.add('active');
       btn.addEventListener('click', () => {
-        if (song) switchLang(l);
-        else currentLang = l;
+        if (song) {
+          switchLang(l);
+        } else {
+          currentLang = l;
+        }
         els.libLangSub.textContent = LANG_LABELS[currentLang];
-        const catScreenOpen = navStack[navStack.length-1].name === 'category';
-        if (catScreenOpen) els.catLangSub.textContent = LANG_LABELS[currentLang];
+        updateLangButtonLabels();
+        buildCategories();
+        const top = navStack[navStack.length - 1];
+        if (top.name === 'library') {
+          renderLibraryScreen();
+        } else if (top.name === 'category') {
+          els.catLangSub.textContent = LANG_LABELS[currentLang];
+          const stillExists = categories.some(c => c.key === top.data.key);
+          if (stillExists) {
+            renderCategoryScreen(top.data.key);
+          } else {
+            showToast('이 언어로는 이 카테고리에 곡이 없어요.');
+            goBack();
+          }
+        }
         closeLangPopover();
       });
       els.langPopover.appendChild(btn);
@@ -1023,13 +1135,15 @@
     const query = q.trim().toLowerCase();
     els.searchResults.innerHTML = '';
     songs.forEach((song, idx) => {
-      if (query && !song.title.toLowerCase().includes(query)) return;
+      if (!hasLang(song, currentLang)) return;
+      const title = songTitle(song);
+      if (query && !title.toLowerCase().includes(query)) return;
       const row = document.createElement('div');
       row.className = 'song-row';
       row.innerHTML =
         '<img class="song-thumb" src="' + (song.cover_url || '') + '" alt="" loading="lazy">' +
         '<span class="song-row-title"></span>';
-      row.querySelector('.song-row-title').textContent = song.title;
+      row.querySelector('.song-row-title').textContent = title;
       row.addEventListener('click', () => {
         closeSearch();
         startPlaylist(allIndices(), false, idx);
@@ -1052,6 +1166,7 @@
       const list = Array.isArray(data) ? data : (data && Array.isArray(data.songs) ? data.songs : []);
       songs = list.filter(s => s.audio_urls && Object.keys(s.audio_urls).length);
       buildCategories();
+      updateLangButtonLabels();
       els.loading.classList.add('hidden');
       renderLibraryScreen();
       showScreen('library');
