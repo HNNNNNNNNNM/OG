@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>JW SONGBOOK</title>
+<title>노래 가사</title>
 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
 <style>
   :root{
@@ -52,6 +52,7 @@
     transition: transform 0.32s cubic-bezier(.32,.72,0,1);
     will-change: transform;
     z-index: 1;
+    overflow: hidden;
   }
   .screen.offscreen-right{ transform: translateX(100%); z-index: 2; }
   .screen.offscreen-left{ transform: translateX(-28%); z-index: 0; }
@@ -199,6 +200,7 @@
     filter: blur(46px) brightness(0.6) saturate(1.25);
     transform: scale(1.18);
     transition: background-image 0.4s ease;
+    clip-path: inset(0);
   }
 
   .player-toolbar{
@@ -210,15 +212,14 @@
   .font-size-ctrl{ display:flex; gap:6px; flex-shrink:0; }
   .font-size-ctrl button{
     background: var(--bg); border:1px solid var(--hairline); border-radius:7px;
-    width:32px; height:28px; font-size:12px; font-weight:700; color: var(--ink); cursor:pointer;
+    width:40px; height:28px; font-size:12px; font-weight:700; color: var(--ink); cursor:pointer;
+    white-space:nowrap; padding:0; line-height:1;
   }
-  .font-size-ctrl button:first-child{ font-size:11px; }
-  .font-size-ctrl button:last-child{ font-size:14px; }
 
   .lyrics-scroll{
     flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
     padding: 6vh 26px;
-    background: rgba(255,255,255,0.72);
+    background: rgba(255,255,255,0.93);
     position:relative; z-index:1;
   }
   .lyrics-inner{ min-height:100%; text-align:center; }
@@ -506,8 +507,8 @@
     <div class="player-toolbar">
       <div class="next-up" id="nextUpLabel"></div>
       <div class="font-size-ctrl">
-        <button id="fontDecBtn" aria-label="글자 작게">가<span>-</span></button>
-        <button id="fontIncBtn" aria-label="글자 크게">가<span>+</span></button>
+        <button id="fontDecBtn" aria-label="글자 작게">가-</button>
+        <button id="fontIncBtn" aria-label="글자 크게">가+</button>
       </div>
     </div>
 
